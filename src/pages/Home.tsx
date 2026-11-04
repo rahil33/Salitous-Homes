@@ -10,14 +10,24 @@ import { ScrollReveal } from '../components/ScrollReveal'
 import { DesignPrinciples } from '../components/DesignPrinciples'
 import { PortfolioPreview } from '../components/PortfolioPreview'
 import { StudioFAQ } from '../components/StudioFAQ'
+import { DesignJourney } from '../components/DesignJourney'
+import { SignatureSpaces } from '../components/SignatureSpaces'
+import { RoomBuild } from '../components/RoomBuild'
+import { Marquee } from '../components/Marquee'
+import { ScrollProgress } from '../components/ScrollProgress'
+import { FloatingContact } from '../components/FloatingContact'
 
 export function Home() {
   return (
     <div>
+      <ScrollProgress />
       <Navbar />
       <div id="site-intro"><Hero /></div>
       <main>
+        <DesignJourney />
         <DesignPrinciples />
+        <RoomBuild />
+        <SignatureSpaces />
 
         <section id="work" className="mx-auto max-w-7xl px-6 py-24 md:px-10 md:py-32 lg:px-12">
           <div className="mb-14 flex flex-col gap-7 md:flex-row md:items-end md:justify-between">
@@ -29,6 +39,8 @@ export function Home() {
           <ProjectFilter limit={6} editorial />
           <ScrollReveal className="mt-12"><Link to="/projects" className="text-link">View all projects <ArrowRight size={15} /></Link></ScrollReveal>
         </section>
+
+        <Marquee />
 
         <PortfolioPreview />
 
@@ -54,7 +66,7 @@ export function Home() {
 
         <StudioFAQ />
 
-        <section className="dark-panel px-6 py-24 md:px-10 md:py-32 lg:px-12">
+        <section className="dark-panel cta-panel px-6 py-24 md:px-10 md:py-32 lg:px-12">
           <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-[1fr_auto] md:items-end">
             <ScrollReveal><p className="eyebrow eyebrow-light">A good place to begin</p><h2 className="display-title mt-5 max-w-3xl text-5xl font-extrabold md:text-7xl">Tell us about the space you have in mind.</h2><p className="mt-6 max-w-lg text-white/65">Share a few details. We’ll help you find a clear next step.</p></ScrollReveal>
             <ScrollReveal direction="right" delay={100}><Link to="/start-project" className="btn-primary">Start your project <ArrowRight size={15} /></Link></ScrollReveal>
@@ -62,6 +74,7 @@ export function Home() {
         </section>
       </main>
       <Footer />
+      <FloatingContact />
     </div>
   )
 }

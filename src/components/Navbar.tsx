@@ -12,17 +12,27 @@ const navLinks = [
 export function Navbar() {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [hidden, setHidden] = useState(false)
   const location = useLocation()
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24)
+    let last = window.scrollY
+    const onScroll = () => {
+      const y = window.scrollY
+      setScrolled(y > 24)
+      // Tuck the bar away while reading down the page; bring it back on any upward scroll.
+      if (Math.abs(y - last) > 6) {
+        setHidden(y > 240 && y > last)
+        last = y
+      }
+    }
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   return (
-    <nav className={`site-nav fixed left-0 right-0 top-0 z-50 ${scrolled ? 'scrolled' : ''}`}>
+    <nav className={`site-nav fixed left-0 right-0 top-0 z-50 ${scrolled ? 'scrolled' : ''} ${hidden && !open ? 'is-hidden' : ''}`}>
       <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-6 md:px-10 lg:px-12">
         <Link to="/" className="flex items-center" aria-label="Salitous Homes home">
           <img src="/assets/brand/salitous-logo-transparent.webp" alt="Salitous Homes" className="site-logo" />
