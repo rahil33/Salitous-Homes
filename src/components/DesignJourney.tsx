@@ -117,7 +117,7 @@ export function DesignJourney() {
               alt={index === active ? chapter.alt : ''}
               aria-hidden={index !== active}
               style={{ objectPosition: chapter.position ?? '50% 50%' }}
-              loading={index === 0 ? 'eager' : 'lazy'}
+              loading="eager"
               decoding="async"
             />
           ))}

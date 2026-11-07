@@ -40,16 +40,18 @@ export function RoomBuild() {
     }
 
     let scene: InteriorScene | null = null
+    let building = false
     let target = 0
     let current = 0
     let frame = 0
     let visible = false
-    let slowFrames = 0
-    let counted = 0
-    let degrades = 0
     let lastStage = -1
     let lastCam = -1
     let disposed = false
+    let lastTime = 0
+    let slowFrames = 0
+    let measured = 0
+    let downgrades = 0
 
     const compact = window.matchMedia('(max-width: 767px)').matches
 
@@ -59,30 +61,34 @@ export function RoomBuild() {
       return distance > 0 ? clamp(-rect.top / distance) : 0
     }
 
-    const tick = () => {
+    const tick = (now: number) => {
       frame = 0
-      if (!scene || !visible) return
+      if (!scene || !visible) { lastTime = 0; return }
       const diff = target - current
-      current = Math.abs(diff) < 0.0003 ? target : current + diff * 0.14
-      const t0 = performance.now()
+      const animating = Math.abs(diff) >= 0.0003
+      current = animating ? current + diff * 0.14 : target
       scene.setProgress(current)
       scene.render()
-      // If the first few dozen frames are slow, drop to the lighter quality tier.
-      if (degrades < 2) counted++
-      if (performance.now() - t0 > 40) slowFrames++
-      if (counted === 40) {
-        if (slowFrames > 14) scene.degrade()
-        counted = 0
-        slowFrames = 0
-        degrades++
+
+      // Judge smoothness by the real time between frames (GPU time never shows up in CPU timers).
+      if (animating && lastTime && downgrades < 2) {
+        measured++
+        if (now - lastTime > 38) slowFrames++
+        if (measured === 24) {
+          if (slowFrames > 9) { scene.degrade(); downgrades++ }
+          measured = 0
+          slowFrames = 0
+        }
       }
+      lastTime = animating ? now : 0
+
       const s = stageAt(current)
       const c = cameraAt(current)
       if (s !== lastStage) { lastStage = s; setStage(s) }
       if (c !== lastCam) { lastCam = c; setCamera(c) }
       if (current !== target) frame = window.requestAnimationFrame(tick)
     }
-    const request = () => { if (!frame) frame = window.requestAnimationFrame(tick) }
+    const request = () => { if (!frame && scene) frame = window.requestAnimationFrame(tick) }
 
     const onScroll = () => { target = progressFromScroll(); request() }
     const onResize = () => {
@@ -91,25 +97,34 @@ export function RoomBuild() {
       request()
     }
 
-    const start = () => {
-      if (scene || disposed) return
-      try {
-        scene = createInteriorScene(canvas, { pixelRatio: compact ? 1.25 : 1.6, shadows: !compact, quality: compact ? 'medium' : 'high' })
-      } catch {
-        setFallback(true)
-        return
-      }
-      scene.resize(canvas.clientWidth, canvas.clientHeight)
-      target = current = progressFromScroll()
-      setReady(true)
-      request()
+    // The scene is prepared in small slices well before it is needed (see createInteriorScene),
+    // so by the time the section scrolls into view there is nothing heavy left to do.
+    const build = () => {
+      if (scene || building || disposed) return
+      building = true
+      createInteriorScene(canvas, { pixelRatio: compact ? 1.25 : 1.5, shadows: !compact, quality: compact ? 'medium' : 'high' })
+        .then((created) => {
+          if (disposed) { created.dispose(); return }
+          scene = created
+          scene.resize(canvas.clientWidth, canvas.clientHeight)
+          target = current = progressFromScroll()
+          setReady(true)
+          if (visible) request()
+        })
+        .catch(() => setFallback(true))
     }
 
     const observer = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting
-      if (visible) { start(); onScroll() }
-    }, { rootMargin: '60% 0px 60% 0px' })
+      if (visible) { target = progressFromScroll(); request() }
+    }, { rootMargin: '5% 0px 5% 0px' })
     observer.observe(section)
+
+    // start preparing when the visitor is roughly four screens away (or the browser is idle after they start scrolling)
+    const preload = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { preload.disconnect(); build() }
+    }, { rootMargin: '400% 0px 400% 0px' })
+    preload.observe(section)
 
     const onLost = (event: Event) => { event.preventDefault(); setFallback(true) }
     canvas.addEventListener('webglcontextlost', onLost)
@@ -118,6 +133,7 @@ export function RoomBuild() {
     return () => {
       disposed = true
       observer.disconnect()
+      preload.disconnect()
       canvas.removeEventListener('webglcontextlost', onLost)
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onResize)

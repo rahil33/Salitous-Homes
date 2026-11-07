@@ -245,10 +245,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 /* Design journey: pinned, scroll-driven walkthrough between the hero and the rest of the page */
 .journey { --p: 0; --open: 0; --chapter-p: 0; --rail: 0; --curtain: 0; --gut: 1.5rem; position: relative; height: 440vh; background: #252e27; color: #f6f5ef; }
-.journey-sticky { position: sticky; top: 0; height: 100svh; min-height: 560px; overflow: hidden; }
-.journey-ghost { position: absolute; left: 50%; top: 50%; z-index: 0; width: max-content; margin: 0; text-align: center; text-transform: uppercase; font-family: var(--font-display); font-size: clamp(4.5rem, 15vw, 15rem); font-weight: 800; letter-spacing: -.06em; line-height: .86; color: transparent; -webkit-text-stroke: 1px rgba(208,189,142,.3); transform: translate(-50%, -50%) scale(calc(1 + var(--open) * .35)); opacity: calc(1 - var(--open) * 1.6); pointer-events: none; }
+.journey-sticky { position: sticky; top: 0; height: 100svh; min-height: 560px; overflow: hidden; contain: layout paint style; }
+.journey-ghost { position: absolute; left: 50%; top: 50%; z-index: 0; width: max-content; margin: 0; text-align: center; text-transform: uppercase; font-family: var(--font-display); font-size: clamp(4.5rem, 15vw, 15rem); font-weight: 800; letter-spacing: -.06em; line-height: .86; color: transparent; -webkit-text-stroke: 1px rgba(208,189,142,.3); transform: translate(-50%, -50%) scale(calc(1 + var(--open) * .35)); opacity: calc(1 - var(--open) * 1.6); pointer-events: none; will-change: transform, opacity; }
 .journey-frame { position: absolute; inset: 0; z-index: 1; overflow: hidden; background: #1b231d; clip-path: inset(calc((1 - var(--open)) * 21%) calc((1 - var(--open)) * 33%) calc((1 - var(--open)) * 21%) calc((1 - var(--open)) * 33%) round calc((1 - var(--open)) * 28px)); }
-.journey-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; scale: 1.16; filter: saturate(.92) contrast(1.03); transition: opacity 1100ms cubic-bezier(.22,1,.36,1), scale 1700ms cubic-bezier(.22,1,.36,1); }
+.journey-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; scale: 1.16; will-change: opacity, scale; transition: opacity 1100ms cubic-bezier(.22,1,.36,1), scale 1700ms cubic-bezier(.22,1,.36,1); }
 .journey-img.is-active { opacity: 1; scale: 1.06; translate: 0 calc((var(--chapter-p) - .5) * -3%); }
 .journey-shade { position: absolute; inset: 0; opacity: var(--open); background: linear-gradient(0deg, rgba(25,34,27,.9) 0%, rgba(25,34,27,.5) 36%, rgba(25,34,27,.08) 72%), linear-gradient(90deg, rgba(25,34,27,.55), transparent 62%); }
 
@@ -414,8 +414,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 /* 3D room build (home) */
 .room { position: relative; height: 640vh; background: #1c241e; color: #f6f5ef; }
-.room-sticky { position: sticky; top: 0; height: 100svh; min-height: 540px; overflow: hidden; }
-.room-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .9s ease; }
+.room-sticky { position: sticky; top: 0; height: 100svh; min-height: 540px; overflow: hidden; contain: layout paint style; }
+.room-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #1c241e; opacity: 0; transition: opacity .9s ease; }
 .room-canvas.is-ready { opacity: 1; }
 .room-head { position: absolute; left: var(--gut, 1.5rem); right: var(--gut, 1.5rem); top: 6.2rem; z-index: 2; pointer-events: none; opacity: 0; transform: translateY(14px); transition: opacity .8s ease, transform .8s cubic-bezier(.22,1,.36,1); }
 .room-head.is-shown { opacity: 1; transform: none; }

@@ -101,11 +101,20 @@ function pnoise(u: number, v: number, period: number, seed: number, octaves = 4)
 
 type Shade = (u: number, v: number, x: number, y: number) => { r: number; g: number; b: number; h: number }
 
-function buildPair(size: number, repeat: [number, number], shade: Shade, withBump = true, anisotropy = 8) {
+type SchedulerLike = { scheduler?: { yield?: () => Promise<void> } }
+// Give the browser a chance to paint / handle scroll between slices of heavy work.
+const yieldMain = (): Promise<void> => {
+  const sched = (globalThis as unknown as SchedulerLike).scheduler
+  return sched?.yield ? sched.yield() : new Promise<void>((resolve) => setTimeout(resolve, 0))
+}
+
+// Builds a colour map (+ optional bump map) from a per-pixel function, in ~6 ms slices so scrolling never stalls.
+async function buildPairAsync(size: number, repeat: [number, number], shade: Shade, withBump = true, anisotropy = 8) {
   const make = () => { const c = document.createElement('canvas'); c.width = c.height = size; return c }
   const cc = make(); const bc = withBump ? make() : null
   const cctx = cc.getContext('2d')!; const bctx = bc ? bc.getContext('2d')! : null
   const ci = cctx.createImageData(size, size); const bi = bctx ? bctx.createImageData(size, size) : null
+  let slice = performance.now()
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const s = shade(x / size, y / size, x, y)
@@ -113,6 +122,7 @@ function buildPair(size: number, repeat: [number, number], shade: Shade, withBum
       ci.data[i] = Math.max(0, Math.min(255, s.r)); ci.data[i + 1] = Math.max(0, Math.min(255, s.g)); ci.data[i + 2] = Math.max(0, Math.min(255, s.b)); ci.data[i + 3] = 255
       if (bi) { const h = Math.max(0, Math.min(255, s.h * 255)); bi.data[i] = bi.data[i + 1] = bi.data[i + 2] = h; bi.data[i + 3] = 255 }
     }
+    if ((y & 3) === 3 && performance.now() - slice > 6) { await yieldMain(); slice = performance.now() }
   }
   cctx.putImageData(ci, 0, 0)
   if (bctx && bi) bctx.putImageData(bi, 0, 0)
@@ -239,7 +249,7 @@ const FinishShader = {
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-export function createInteriorScene(canvas: HTMLCanvasElement, opts: { pixelRatio?: number; shadows?: boolean; quality?: Quality } = {}): InteriorScene {
+export async function createInteriorScene(canvas: HTMLCanvasElement, opts: { pixelRatio?: number; shadows?: boolean; quality?: Quality } = {}): Promise<InteriorScene> {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' })
   const basePixelRatio = Math.min(opts.pixelRatio ?? 1.5, 2)
   renderer.setPixelRatio(basePixelRatio)
@@ -252,10 +262,12 @@ export function createInteriorScene(canvas: HTMLCanvasElement, opts: { pixelRati
   const scene = new THREE.Scene()
   const BG = new THREE.Color('#1c241e')
   scene.background = BG
+  await yieldMain()
   const pmrem = new THREE.PMREMGenerator(renderer)
   const envTexture = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
   scene.environment = envTexture
   scene.environmentIntensity = 0.4
+  await yieldMain()
 
   const camera = new THREE.PerspectiveCamera(38, 16 / 9, 0.1, 80)
   const reveals: Reveal[] = []
@@ -275,21 +287,22 @@ export function createInteriorScene(canvas: HTMLCanvasElement, opts: { pixelRati
   }
 
   // ---- textures -------------------------------------------------------------
-  const wood = buildPair(1024, [W / 3, D / 3], woodShade(12, 7, [196, 150, 104], 2))
-  const oakSlat = [3, 8, 13, 21].map((seed, i) => {
-    const t = buildPair(256, [1, 1], woodShade(3, seed, [200, 152, 104], 1, true), true, 4)
-    t.map.offset.set(i * 0.17, 0); t.map.wrapS = THREE.RepeatWrapping
-    return t
-  })
-  const walnutTex = buildPair(256, [1, 1], woodShade(4, 41, [112, 78, 58], 1, true), true, 4)
-  const plaster = buildPair(512, [W / 2.2, H / 2.2], plasterShade(21))
-  const plasterRight = buildPair(512, [D / 2.2, H / 2.2], plasterShade(25))
-  const sofaTex = buildPair(512, [3, 3], bouclShade(31, [226, 218, 202]))
-  const cushionTex = buildPair(256, [2, 2], bouclShade(33, [255, 255, 255], 0.28))
-  const rugTex = buildPair(512, [3.5, 3.5], bouclShade(37, [222, 212, 192], 0.5))
-  const marble = buildPair(512, [1, 1], marbleShade(51, [238, 234, 226]), false)
-  const marbleDark = buildPair(256, [1, 1], marbleShade(57, [214, 206, 194]), false)
-  const velvetTex = buildPair(256, [3, 3], bouclShade(61, [255, 255, 255], 0.12))
+  const wood = await buildPairAsync(768, [W / 3, D / 3], woodShade(12, 7, [196, 150, 104], 2))
+  const oakSlat: Awaited<ReturnType<typeof buildPairAsync>>[] = []
+  for (const [i, seed] of [3, 8, 13, 21].entries()) {
+    const t = await buildPairAsync(256, [1, 1], woodShade(3, seed, [200, 152, 104], 1, true), true, 4)
+    t.map.offset.set(i * 0.17, 0)
+    oakSlat.push(t)
+  }
+  const walnutTex = await buildPairAsync(256, [1, 1], woodShade(4, 41, [112, 78, 58], 1, true), true, 4)
+  const plaster = await buildPairAsync(384, [W / 2.2, H / 2.2], plasterShade(21))
+  const plasterRight = await buildPairAsync(384, [D / 2.2, H / 2.2], plasterShade(25))
+  const sofaTex = await buildPairAsync(384, [3, 3], bouclShade(31, [226, 218, 202]))
+  const cushionTex = await buildPairAsync(256, [2, 2], bouclShade(33, [255, 255, 255], 0.28))
+  const rugTex = await buildPairAsync(384, [3.5, 3.5], bouclShade(37, [222, 212, 192], 0.5))
+  const marble = await buildPairAsync(384, [1, 1], marbleShade(51, [238, 234, 226]), false)
+  const marbleDark = await buildPairAsync(256, [1, 1], marbleShade(57, [214, 206, 194]), false)
+  const velvetTex = await buildPairAsync(256, [3, 3], bouclShade(61, [255, 255, 255], 0.12))
   const leafTexture = canvasTex(256, (ctx, size) => {
     const g = ctx.createLinearGradient(0, size, 0, 0)
     g.addColorStop(0, '#2f4a2e'); g.addColorStop(0.5, '#4a6e43'); g.addColorStop(1, '#6f9560')
@@ -334,6 +347,9 @@ export function createInteriorScene(canvas: HTMLCanvasElement, opts: { pixelRati
   const textures = [wood, ...oakSlat, walnutTex, plaster, plasterRight, sofaTex, cushionTex, rugTex, marble, marbleDark, velvetTex]
   for (const t of textures) { disposables.push(t.map); if (t.bump) disposables.push(t.bump) }
   disposables.push(leafTexture, daySky, duskSky, screenTexture, artTexture)
+  const toUpload: THREE.Texture[] = [leafTexture, daySky, duskSky, screenTexture, artTexture]
+  for (const t of textures) { toUpload.push(t.map); if (t.bump) toUpload.push(t.bump) }
+  await yieldMain()
 
   // ---- material + mesh helpers ---------------------------------------------
   const std = (color: string | THREE.Color, roughness = 0.7, metalness = 0, extra: THREE.MeshStandardMaterialParameters = {}) =>
@@ -408,6 +424,7 @@ export function createInteriorScene(canvas: HTMLCanvasElement, opts: { pixelRati
   const coveLight = new THREE.PointLight('#ffd9a8', 0, 9, 2); coveLight.position.set(0, 2.55, 0)
   scene.add(tvLight, lampLight, coveLight)
 
+  await yieldMain()
   // ---- shell ----------------------------------------------------------------
   const wallMat = phys({ color: COLORS.concrete.clone(), map: plaster.map, bumpMap: plaster.bump, bumpScale: 0.8, roughness: 0.94 })
   const slabMat = std('#2c332e', 0.9)
@@ -501,6 +518,7 @@ export function createInteriorScene(canvas: HTMLCanvasElement, opts: { pixelRati
     box(0.03, 0.1, D, skirtMat, W / 2 - 0.015, 0.05, 0, false, true),
   ), 0.2, 0.27, 'fade')
 
+  await yieldMain()
   // ---- ceiling --------------------------------------------------------------
   const ceilMat = phys({ color: '#f2eee6', map: plaster.map, bumpMap: plaster.bump, bumpScale: 0.5, roughness: 0.95, emissive: '#d9d3c7', emissiveIntensity: 0.14 })
   const ceilingPlane = new THREE.Mesh(track(new THREE.PlaneGeometry(W, D)), ceilMat)
@@ -538,6 +556,7 @@ export function createInteriorScene(canvas: HTMLCanvasElement, opts: { pixelRati
   const rod = cyl(0.015, 0.015, winW + 2.3, brass(), -W / 2 + 0.14, 2.82, (winZ0 + winZ1) / 2, 12); rod.rotation.x = Math.PI / 2
   register(group(curtainA, curtainB, rod), 0.24, 0.31, 'drop', 0.8)
 
+  await yieldMain()
   // ---- joinery --------------------------------------------------------------
   const slatCount = 34; const slatPitch = 3.0 / slatCount
   const slats = new THREE.Group()
@@ -615,6 +634,7 @@ export function createInteriorScene(canvas: HTMLCanvasElement, opts: { pixelRati
   }
   register(tower, 0.44, 0.54, 'drop', 0.8)
 
+  await yieldMain()
   // ---- furniture ------------------------------------------------------------
   const rugMat = fabricMat(rugTex, '#ddd2bf', 2.2)
   rugMat.sheen = 0.4
@@ -721,6 +741,7 @@ export function createInteriorScene(canvas: HTMLCanvasElement, opts: { pixelRati
   })
   register(pendants, 0.8, 0.88, 'fade')
 
+  await yieldMain()
   // ---- camera path ----------------------------------------------------------
   const camKeys: { p: [number, number, number]; t: [number, number, number]; fov: number }[] = [
     { p: [5.9, 5.5, 7.4], t: [0, 0.4, -0.3], fov: 36 },
@@ -751,6 +772,7 @@ export function createInteriorScene(canvas: HTMLCanvasElement, opts: { pixelRati
     focusDistance = camera.position.distanceTo(tmpTarget)
   }
 
+  await yieldMain()
   // ---- post-processing ------------------------------------------------------
   let quality: Quality = opts.quality ?? 'high'
   let width = 1280; let height = 720
@@ -861,6 +883,25 @@ export function createInteriorScene(canvas: HTMLCanvasElement, opts: { pixelRati
   }
 
   applyQuality()
+
+  // Pre-upload textures and pre-compile every shader now (while the user is still scrolling elsewhere),
+  // so nothing has to be uploaded or compiled the moment a new piece of furniture appears.
+  for (let i = 0; i < toUpload.length; i++) {
+    renderer.initTexture(toUpload[i])
+    if (i % 2 === 1) await yieldMain()
+  }
+  const allVisible: { obj: THREE.Object3D; was: boolean }[] = []
+  scene.traverse((o) => { allVisible.push({ obj: o, was: o.visible }); o.visible = true })
+  camera.layers.enable(1)
+  try { await renderer.compileAsync(scene, camera) } catch { /* compile on first draw instead */ }
+  await yieldMain()
+  if (quality !== 'low') {
+    composer.setSize(96, 54)
+    composer.render()
+    composer.setSize(width, height)
+  }
+  for (const { obj, was } of allVisible) obj.visible = was
+  await yieldMain()
 
   return {
     setProgress(p: number) { progress = clamp01(p) },
