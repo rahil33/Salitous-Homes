@@ -40,7 +40,7 @@ export const projects: Project[] = [
       { src: '/assets/projects/karnataka/videos/karnataka-walkthrough-02.mp4', alt: 'Karnataka Project 01 — Walkthrough', type: 'video', poster: '/assets/projects/karnataka/videos/karnataka-walkthrough-02-poster.webp' },
       { src: '/assets/projects/karnataka/videos/karnataka-walkthrough-01.mp4', alt: 'Karnataka Project 01 — Walkthrough 2', type: 'video', poster: '/assets/projects/karnataka/videos/karnataka-walkthrough-01-poster.webp' },
     ],
-    thumbnail: '/assets/projects/karnataka/images/karnataka-image-02-800.webp',
+    thumbnail: '/assets/projects/covers/karnataka-01-800.webp',
   },
   {
     id: 'karnataka-02',
@@ -56,7 +56,7 @@ export const projects: Project[] = [
       { src: '/assets/projects/karnataka/videos/karnataka-walkthrough-03.mp4', alt: 'Karnataka Project 02 — Walkthrough 2', type: 'video', poster: '/assets/projects/karnataka/videos/karnataka-walkthrough-03-poster.webp' },
       { src: '/assets/projects/karnataka/videos/karnataka-walkthrough-04.mp4', alt: 'Karnataka Project 02 — Walkthrough 3', type: 'video', poster: '/assets/projects/karnataka/videos/karnataka-walkthrough-04-poster.webp' },
     ],
-    thumbnail: '/assets/projects/karnataka/images/karnataka-image-21-800.webp',
+    thumbnail: '/assets/projects/covers/karnataka-02-800.webp',
   },
   {
     id: 'karnataka-03',
@@ -74,7 +74,7 @@ export const projects: Project[] = [
       { src: '/assets/projects/karnataka/videos/karnataka-walkthrough-06.mp4', alt: 'Karnataka Project 03 — Walkthrough 2', type: 'video', poster: '/assets/projects/karnataka/videos/karnataka-walkthrough-06-poster.webp' },
       { src: '/assets/projects/karnataka/videos/karnataka-walkthrough-07.mp4', alt: 'Karnataka Project 03 — Walkthrough 3', type: 'video', poster: '/assets/projects/karnataka/videos/karnataka-walkthrough-07-poster.webp' },
     ],
-    thumbnail: '/assets/projects/karnataka/images/karnataka-image-37-800.webp',
+    thumbnail: '/assets/projects/covers/karnataka-03-800.webp',
   },
   {
     id: 'tamil-nadu-01',
@@ -85,7 +85,7 @@ export const projects: Project[] = [
       { src: '/assets/projects/tamil-nadu/images/tamil-nadu-image-04-800.webp', alt: 'Tamil Nadu Project 01 — Interior', type: 'image' },
       { src: '/assets/projects/tamil-nadu/images/tamil-nadu-image-07-800.webp', alt: 'Tamil Nadu Project 01 — Detail', type: 'image' },
     ],
-    thumbnail: '/assets/projects/tamil-nadu/images/tamil-nadu-image-01-800.webp',
+    thumbnail: '/assets/projects/covers/tamil-nadu-01-800.webp',
   },
   {
     id: 'tamil-nadu-02',
@@ -96,7 +96,7 @@ export const projects: Project[] = [
       { src: '/assets/projects/tamil-nadu/images/tamil-nadu-image-10-800.webp', alt: 'Tamil Nadu Project 02 — Interior', type: 'image' },
       { src: '/assets/projects/tamil-nadu/images/tamil-nadu-image-13-800.webp', alt: 'Tamil Nadu Project 02 — Room', type: 'image' },
     ],
-    thumbnail: '/assets/projects/tamil-nadu/images/tamil-nadu-image-10-800.webp',
+    thumbnail: '/assets/projects/covers/tamil-nadu-02-800.webp',
   },
   {
     id: 'tamil-nadu-03',
@@ -107,6 +107,6 @@ export const projects: Project[] = [
       { src: '/assets/projects/tamil-nadu/images/tamil-nadu-image-17-800.webp', alt: 'Tamil Nadu Project 03 — Interior', type: 'image' },
       { src: '/assets/projects/tamil-nadu/images/tamil-nadu-image-14-800.webp', alt: 'Tamil Nadu Project 03 — Detail', type: 'image' },
     ],
-    thumbnail: '/assets/projects/tamil-nadu/images/tamil-nadu-image-17-800.webp',
+    thumbnail: '/assets/projects/covers/tamil-nadu-03-800.webp',
   },
 ]

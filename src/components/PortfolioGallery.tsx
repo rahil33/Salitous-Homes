@@ -11,6 +11,13 @@ const tabs: { value: Tab; label: string; blurb: string }[] = [
   { value: 'materials', label: 'Materials & specs', blurb: 'Premium laminates, natural stone finishes and warm wood tones, curated for lasting quality and a luxurious feel.' },
 ]
 
+// Keep the gallery to strong images: drop low-resolution frames and ones with stock-site watermarks.
+const hidden = [
+  'console-themes-1', 'console-themes-2', 'console-themes-3', 'console-themes-4', 'crockery-bar-1', 'crockery-bar-2', 'crockery-bar-3', 'crockery-bar-4', 'crockery-units-1',
+  'master-room-3', 'master-room-6', 'bed-designs-1', 'guest-bedroom-2', 'guest-bedroom-3', 'headboards-1', 'master-panelling-1',
+]
+const strong = (img: { src: string; w: number; h: number }) => Math.min(img.w, img.h) >= 440 && !hidden.some((h) => img.src.includes(`/${h}.webp`))
+
 function Section({ s, onOpen }: { s: PortfolioSection; onOpen: (s: PortfolioSection, i: number) => void }) {
   const drawing = s.cat === 'drawings'
   return (
@@ -35,13 +42,13 @@ export function PortfolioGallery({ initial = 'completed' }: { initial?: Tab }) {
   const [tab, setTab] = useState<Tab>(initial)
   const [box, setBox] = useState<{ s: PortfolioSection; i: number } | null>(null)
   const current = tabs.find((t) => t.value === tab)!
-  const list = portfolioBy(tab)
+  const list = portfolioBy(tab).map((s) => ({ ...s, images: s.cat === 'drawings' || s.cat === 'materials' ? s.images : s.images.filter(strong) })).filter((s) => s.images.length > 0)
   return (
     <div id="portfolio">
       <div className="mb-8 flex flex-wrap gap-2" role="tablist" aria-label="Portfolio sections">
         {tabs.map((t) => (
           <button key={t.value} type="button" role="tab" aria-selected={tab === t.value} onClick={() => setTab(t.value)} className={`filter-pill ${tab === t.value ? 'is-active' : ''}`}>
-            {t.label}<span>{portfolio.filter((s) => s.cat === t.value).reduce((n, s) => n + s.images.length, 0)}</span>
+            {t.label}<span>{portfolio.filter((s) => s.cat === t.value).reduce((n, s) => n + (s.cat === 'drawings' || s.cat === 'materials' ? s.images.length : s.images.filter(strong).length), 0)}</span>
           </button>
         ))}
       </div>

@@ -12,8 +12,5 @@ Apply that policy to hashed files below `/assets/`. Do **not** apply it to `inde
 
 The Vite `public/` directory is copied verbatim, so stable public asset paths do not receive automatic content hashes. Keep filenames versioned/content-addressed whenever their contents change, then retain old versions long enough for cached HTML to expire.
 
-## Intro animation
-`/` shows `public/animate/` (3D walkthrough) once per session; "Enter Website" (or "Skip intro") sets `sessionStorage.salitous-entered` and loads the site.
-
 ## WhatsApp auto-reply
 Forms POST to `/api/inquiry` (`api/inquiry.js`, deploy on Vercel/Netlify). It sends the customer an approved WhatsApp template and notifies the team. Fill `.env.example` vars in your host. Without them the forms fall back to opening WhatsApp/email with details prefilled.
