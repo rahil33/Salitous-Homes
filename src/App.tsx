@@ -1,10 +1,9 @@
-import { useRoutes } from 'react-router-dom'
+import { Navigate, useRoutes } from 'react-router-dom'
 
 import { Entry } from './pages/Entry'
 import { Projects } from './pages/Projects'
 import { ProjectDetails } from './pages/ProjectDetails'
 import { ServicesPage } from './pages/Services'
-import { PackagesPage } from './pages/Packages'
 import { AboutPage } from './pages/About'
 import { ContactPage } from './pages/Contact'
 import { ConsultationPage } from './pages/Consultation'
@@ -16,7 +15,7 @@ const routes = [
   { path: '/projects', Component: Projects },
   { path: '/projects/:id', Component: ProjectDetails },
   { path: '/services', Component: ServicesPage },
-  { path: '/packages', Component: PackagesPage },
+  { path: '/packages', element: <Navigate to="/services" replace /> },
   { path: '/about', Component: AboutPage },
   { path: '/contact', Component: ContactPage },
   { path: '/consultation', Component: ConsultationPage },

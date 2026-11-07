@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { ArrowDownRight, ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { subscribeScroll } from '../lib/scrollFrame'
 
 const HERO_VIDEO = '/assets/projects/karnataka/videos/hero-loop.mp4'
 const HERO_POSTER = '/assets/projects/karnataka/videos/hero-poster.webp'
@@ -14,18 +15,9 @@ export function Hero() {
   useEffect(() => {
     const section = sectionRef.current
     if (!section || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    let frame = 0
-    const update = () => {
-      frame = 0
-      section.style.setProperty('--hero-p', Math.min(1, Math.max(0, window.scrollY / window.innerHeight)).toFixed(4))
-    }
-    const request = () => { if (!frame) frame = window.requestAnimationFrame(update) }
-    update()
-    window.addEventListener('scroll', request, { passive: true })
-    return () => {
-      window.removeEventListener('scroll', request)
-      if (frame) window.cancelAnimationFrame(frame)
-    }
+    return subscribeScroll((y, vh) => {
+      section.style.setProperty('--hero-p', Math.min(1, Math.max(0, y / vh)).toFixed(4))
+    })
   }, [])
 
   useEffect(() => {

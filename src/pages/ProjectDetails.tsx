@@ -67,12 +67,6 @@ export function ProjectDetails() {
               >
                 START YOUR PROJECT
               </Link>
-              <Link
-                to="/packages"
-                className="inline-block glass text-walnut font-medium px-10 py-3.5 rounded-full text-[13px] tracking-wide hover:bg-[rgba(246,245,239,0.7)] transition-all duration-300 border border-beige/40"
-              >
-                VIEW PACKAGE DETAILS
-              </Link>
             </div>
           </ScrollReveal>
         </div>

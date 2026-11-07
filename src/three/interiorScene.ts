@@ -250,13 +250,15 @@ const FinishShader = {
 // ---------------------------------------------------------------------------------------------------------------------
 
 export async function createInteriorScene(canvas: HTMLCanvasElement, opts: { pixelRatio?: number; shadows?: boolean; quality?: Quality } = {}): Promise<InteriorScene> {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' })
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' })
   const basePixelRatio = Math.min(opts.pixelRatio ?? 1.5, 2)
   renderer.setPixelRatio(basePixelRatio)
   renderer.toneMapping = THREE.ACESFilmicToneMapping
   renderer.toneMappingExposure = 1
   renderer.shadowMap.enabled = opts.shadows !== false
   renderer.shadowMap.type = THREE.PCFShadowMap
+  renderer.shadowMap.autoUpdate = false // the sun's shadows only need re-drawing when something in the room moves
+  renderer.shadowMap.needsUpdate = true
   RectAreaLightUniformsLib.init()
 
   const scene = new THREE.Scene()
@@ -806,7 +808,8 @@ export async function createInteriorScene(canvas: HTMLCanvasElement, opts: { pix
     bokeh.enabled = quality === 'high'
     bloom.enabled = quality !== 'low'
     sun.castShadow = quality !== 'low' && opts.shadows !== false
-    renderer.setPixelRatio(quality === 'low' ? Math.min(1, basePixelRatio) : basePixelRatio)
+    renderer.shadowMap.needsUpdate = true
+    renderer.setPixelRatio(quality === 'low' ? 1 : quality === 'medium' ? Math.min(basePixelRatio, 1.15) : basePixelRatio)
     composer.setPixelRatio(renderer.getPixelRatio())
     composer.setSize(width, height)
   }
@@ -818,10 +821,13 @@ export async function createInteriorScene(canvas: HTMLCanvasElement, opts: { pix
   let progress = 0
   let aspect = 16 / 9
 
+  let lastSignature = -1
   const update = () => {
     const p = progress
+    let signature = 0
     for (const r of reveals) {
       const t = outCubic(range(p, r.a, r.b))
+      signature += t
       const vis = t > 0.002
       r.obj.visible = vis
       if (!vis) continue
@@ -844,6 +850,8 @@ export async function createInteriorScene(canvas: HTMLCanvasElement, opts: { pix
         }
       }
     }
+
+    if (Math.abs(signature - lastSignature) > 1e-5) { lastSignature = signature; renderer.shadowMap.needsUpdate = true }
 
     const bp = 1 - smooth(range(p, 0.07, 0.15))
     ;(outline.material as THREE.LineBasicMaterial).opacity = bp
