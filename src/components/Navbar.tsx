@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
+import { subscribeScroll } from '../lib/scrollFrame'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 
 const navLinks = [
   { to: '/projects', label: 'Projects' },
   { to: '/services', label: 'Services' },
-  { to: '/packages', label: 'Packages' },
   { to: '/about', label: 'About' },
 ]
 
@@ -17,18 +17,14 @@ export function Navbar() {
 
   useEffect(() => {
     let last = window.scrollY
-    const onScroll = () => {
-      const y = window.scrollY
+    return subscribeScroll((y) => {
       setScrolled(y > 24)
       // Tuck the bar away while reading down the page; bring it back on any upward scroll.
       if (Math.abs(y - last) > 6) {
         setHidden(y > 240 && y > last)
         last = y
       }
-    }
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    })
   }, [])
 
   return (

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { CAMERAS, STAGES, createInteriorScene } from '../three/interiorScene'
+import { detectQuality } from '../three/gpuTier'
 import type { InteriorScene } from '../three/interiorScene'
-
-const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
+import { sectionProgress, subscribeScroll, trackBox } from '../lib/scrollFrame'
 
 const stageAt = (p: number) => STAGES.reduce((acc, stage, i) => (p >= stage.from ? i : acc), 0)
 const cameraAt = (p: number) => CAMERAS.reduce((acc, cam, i) => (p >= cam.at - 0.04 && i < CAMERAS.length ? i : acc), 0)
@@ -55,11 +55,8 @@ export function RoomBuild() {
 
     const compact = window.matchMedia('(max-width: 767px)').matches
 
-    const progressFromScroll = () => {
-      const rect = section.getBoundingClientRect()
-      const distance = rect.height - window.innerHeight
-      return distance > 0 ? clamp(-rect.top / distance) : 0
-    }
+    const { box, stop: stopTracking } = trackBox(section)
+    const progressFromScroll = () => sectionProgress(box, window.scrollY, window.innerHeight)
 
     const tick = (now: number) => {
       frame = 0
@@ -90,7 +87,7 @@ export function RoomBuild() {
     }
     const request = () => { if (!frame && scene) frame = window.requestAnimationFrame(tick) }
 
-    const onScroll = () => { target = progressFromScroll(); request() }
+    const unsubscribeScroll = subscribeScroll((y, vh) => { target = sectionProgress(box, y, vh); request() })
     const onResize = () => {
       if (!scene) return
       scene.resize(canvas.clientWidth, canvas.clientHeight)
@@ -102,7 +99,7 @@ export function RoomBuild() {
     const build = () => {
       if (scene || building || disposed) return
       building = true
-      createInteriorScene(canvas, { pixelRatio: compact ? 1.25 : 1.5, shadows: !compact, quality: compact ? 'medium' : 'high' })
+      createInteriorScene(canvas, { pixelRatio: compact ? 1 : 1.25, shadows: !compact, quality: detectQuality() })
         .then((created) => {
           if (disposed) { created.dispose(); return }
           scene = created
@@ -128,14 +125,14 @@ export function RoomBuild() {
 
     const onLost = (event: Event) => { event.preventDefault(); setFallback(true) }
     canvas.addEventListener('webglcontextlost', onLost)
-    window.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('resize', onResize)
     return () => {
       disposed = true
       observer.disconnect()
       preload.disconnect()
       canvas.removeEventListener('webglcontextlost', onLost)
-      window.removeEventListener('scroll', onScroll)
+      unsubscribeScroll()
+      stopTracking()
       window.removeEventListener('resize', onResize)
       if (frame) window.cancelAnimationFrame(frame)
       scene?.dispose()

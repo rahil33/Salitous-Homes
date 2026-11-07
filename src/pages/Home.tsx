@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { Navbar } from '../components/Navbar'
 import { Hero } from '../components/Hero'
 import { Services } from '../components/Services'
-import { PackagesPreview } from '../components/PackagesPreview'
 import { Footer } from '../components/Footer'
 import { ProjectFilter } from '../components/ProjectFilter'
 import { ScrollReveal } from '../components/ScrollReveal'
@@ -53,15 +52,6 @@ export function Home() {
             <Services limit={4} />
             <ScrollReveal className="mt-10"><Link to="/services" className="text-link">Explore all services <ArrowRight size={15} /></Link></ScrollReveal>
           </div>
-        </section>
-
-        <section className="mx-auto max-w-7xl px-6 py-24 md:px-10 md:py-32 lg:px-12">
-          <div className="mb-14 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-            <ScrollReveal><p className="section-kicker">Simple starting points</p><h2 className="section-heading mt-5">A package for the way you live.</h2></ScrollReveal>
-            <ScrollReveal direction="right" delay={100}><p className="max-w-sm text-sm leading-relaxed text-taupe">Flexible design support for different home sizes and finish preferences.</p></ScrollReveal>
-          </div>
-          <PackagesPreview />
-          <ScrollReveal className="mt-12"><Link to="/packages" className="text-link">Compare packages <ArrowRight size={15} /></Link></ScrollReveal>
         </section>
 
         <StudioFAQ />

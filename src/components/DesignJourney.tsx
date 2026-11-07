@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { sectionProgress, subscribeScroll, trackBox } from '../lib/scrollFrame'
 
 type Chapter = {
   number: string
@@ -68,14 +69,12 @@ export function DesignJourney() {
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    let frame = 0
-
-    const update = () => {
-      frame = 0
-      const rect = el.getBoundingClientRect()
-      const distance = rect.height - window.innerHeight
-      if (distance <= 0) return
-      const p = clamp(-rect.top / distance)
+    const { box, stop } = trackBox(el)
+    let lastIndex = -1
+    let lastOpen = false
+    const unsubscribe = subscribeScroll((y, vh) => {
+      if (box.height - vh <= 0) return
+      const p = sectionProgress(box, y, vh)
       const open = easeOut(clamp(p / OPEN_END))
       const local = clamp((p - OPEN_END) / (1 - OPEN_END)) * chapters.length
       const index = Math.min(chapters.length - 1, Math.floor(local))
@@ -84,21 +83,11 @@ export function DesignJourney() {
       el.style.setProperty('--chapter-p', (local - index).toFixed(4))
       el.style.setProperty('--rail', clamp((p - OPEN_END) / (1 - OPEN_END)).toFixed(4))
       el.style.setProperty('--curtain', clamp((p - CURTAIN_START) / (1 - CURTAIN_START)).toFixed(4))
-      setActive((prev) => (prev === index ? prev : index))
-      setOpened((prev) => (prev === open > 0.92 ? prev : open > 0.92))
-    }
-    const request = () => {
-      if (!frame) frame = window.requestAnimationFrame(update)
-    }
-
-    update()
-    window.addEventListener('scroll', request, { passive: true })
-    window.addEventListener('resize', request)
-    return () => {
-      window.removeEventListener('scroll', request)
-      window.removeEventListener('resize', request)
-      if (frame) window.cancelAnimationFrame(frame)
-    }
+      if (index !== lastIndex) { lastIndex = index; setActive(index) }
+      const isOpen = open > 0.92
+      if (isOpen !== lastOpen) { lastOpen = isOpen; setOpened(isOpen) }
+    })
+    return () => { unsubscribe(); stop() }
   }, [])
 
   return (

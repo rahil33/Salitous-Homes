@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { MessageCircle } from 'lucide-react'
+import { subscribeScroll } from '../lib/scrollFrame'
 import { WHATSAPP_LINK } from '../lib/contact'
 
 // WhatsApp shortcut that appears once the visitor has scrolled past the hero.
@@ -9,10 +10,7 @@ export function FloatingContact() {
   const visible = scrolled && !inJourney
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > window.innerHeight * 0.9)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    return subscribeScroll((y, vh) => setScrolled(y > vh * 0.9))
   }, [])
 
   // Stay out of the way of the pinned design-journey section.
